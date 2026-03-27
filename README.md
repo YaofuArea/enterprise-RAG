@@ -1,129 +1,130 @@
-# Enterprise RAG — 企业级检索增强生成系统
+# Enterprise RAG
 
-一个从零实现的企业级 RAG（Retrieval-Augmented Generation）知识库问答系统，代码注释密集，适合学习 RAG 全链路的工程实现。
+A production-grade Retrieval-Augmented Generation (RAG) system built from scratch, with dense inline comments explaining every technical decision. Designed as a learning resource for engineers building enterprise knowledge base Q&A systems.
 
-## 涵盖的技术点
+## What's covered
 
-| 模块 | 技术 |
-|------|------|
-| 文档摄入 | 多格式解析（PDF/Word/TXT）、递归字符切割、语义切割、chunk overlap |
-| 向量索引 | FAISS（Flat/IVF/HNSW 对比）、多粒度索引（Parent Document Retriever） |
-| 稀疏索引 | BM25 Okapi，中文分词处理 |
-| 层级召回 | **RAPTOR**：GMM 聚类 + 递归摘要 + Collapsed Tree 检索 |
-| Query 增强 | **HyDE**、**Multi-Query**、**Step-Back Prompting**、指代消解 |
-| 混合检索 | Dense + Sparse + **RRF 倒数排名融合** |
-| 精排 | **Cross-Encoder Reranker**（Bi-Encoder vs Cross-Encoder 原理对比） |
-| 多样性 | **MMR 最大边际相关性** |
-| 语义缓存 | FAISS 相似度匹配 + LFU 淘汰 + TTL 过期 + 分布式方案设计 |
-| 生成 | **Lost-in-the-Middle** 排列优化、Token 预算管理、流式输出（SSE） |
-| 多轮对话 | 滑动窗口 + 摘要压缩、Session 管理 |
-| API 服务 | FastAPI + SSE + 依赖注入 + 健康检查 |
+| Module | Techniques |
+|--------|-----------|
+| Document Ingestion | Multi-format parsing (PDF/Word/TXT), recursive character splitting, semantic chunking, chunk overlap |
+| Vector Indexing | FAISS (Flat / IVF / HNSW trade-offs), multi-granularity index (Parent Document Retriever) |
+| Sparse Indexing | BM25 Okapi, Chinese tokenization |
+| Hierarchical Retrieval | **RAPTOR** — GMM clustering + recursive summarization + Collapsed Tree search |
+| Query Enhancement | **HyDE**, **Multi-Query**, **Step-Back Prompting**, coreference resolution |
+| Hybrid Search | Dense + Sparse + **RRF (Reciprocal Rank Fusion)** |
+| Re-ranking | **Cross-Encoder Reranker** (Bi-Encoder vs Cross-Encoder explained) |
+| Diversity | **MMR (Maximal Marginal Relevance)** |
+| Semantic Cache | FAISS similarity matching + LFU eviction + TTL expiry + distributed design notes |
+| Generation | **Lost-in-the-Middle** reordering, token budget management, streaming output (SSE) |
+| Multi-turn Dialogue | Sliding window + summary compression, session management |
+| API Server | FastAPI + SSE + dependency injection + health checks |
 
-## 项目结构
+## Project structure
 
 ```
 enterprise_rag/
-├── data/                      # 示例知识库文档（4 份企业文档）
-│   ├── hr_policy.txt          # HR 制度（年假、薪酬、考勤）
-│   ├── it_system_manual.txt   # ERP 系统操作手册
-│   ├── product_faq.txt        # 产品 FAQ
-│   └── security_policy.txt    # 信息安全规范
+├── data/                      # Sample knowledge base documents
+│   ├── hr_policy.txt          # HR policy (leave, compensation, attendance)
+│   ├── it_system_manual.txt   # ERP system operations manual
+│   ├── product_faq.txt        # Product FAQ
+│   └── security_policy.txt    # Information security policy
 │
-├── ingestion.py               # 文档解析 + Chunking 策略
-├── indexing.py                # FAISS 向量索引 + BM25 稀疏索引
-├── raptor.py                  # RAPTOR 层级召回
+├── ingestion.py               # Document parsing + chunking strategies
+├── indexing.py                # FAISS vector index + BM25 sparse index
+├── raptor.py                  # RAPTOR hierarchical retrieval
 ├── query_enhancement.py       # HyDE / Multi-Query / Step-Back
-├── retrieval.py               # 混合检索 + Reranker + MMR
-├── cache.py                   # 语义缓存
-├── generation.py              # Prompt 工程 + 流式生成
-├── conversation.py            # 多轮对话管理
-├── pipeline.py                # 完整流程组装
-├── server.py                  # FastAPI 服务
+├── retrieval.py               # Hybrid search + Reranker + MMR
+├── cache.py                   # Semantic cache
+├── generation.py              # Prompt engineering + streaming generation
+├── conversation.py            # Multi-turn conversation management
+├── pipeline.py                # Full pipeline assembly
+├── server.py                  # FastAPI service
 └── requirements.txt
 ```
 
-## 快速开始
+## Quickstart
 
-### 1. 安装依赖
+### 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 按顺序运行各模块（每个都有独立演示）
+### 2. Run each module in order
+
+Each file runs standalone with a built-in demo — no API key required.
 
 ```bash
-export OMP_NUM_THREADS=1   # Mac 必须设置，修复 FAISS + PyTorch OpenMP 冲突
+export OMP_NUM_THREADS=1   # Required on macOS (fixes FAISS + PyTorch OpenMP conflict)
 
-python ingestion.py        # 文档切割演示
-python indexing.py         # 索引构建 + 向量/BM25 检索对比
-python raptor.py           # RAPTOR 树构建 + 层级检索演示
-python query_enhancement.py # Query 增强演示（Mock 模式，不需要 API key）
-python retrieval.py        # 混合检索 + RRF + MMR 演示
-python cache.py            # 语义缓存 + 阈值敏感性演示
-python generation.py       # Prompt 结构 + Lost-in-the-Middle 演示
-python conversation.py     # 多轮对话历史管理演示
-python pipeline.py         # 完整 RAG 流程（Mock 模式）
+python ingestion.py         # Chunking strategies demo
+python indexing.py          # Index build + vector vs BM25 comparison
+python raptor.py            # RAPTOR tree build + hierarchical retrieval demo
+python query_enhancement.py # Query enhancement demo (mock mode, no API key needed)
+python retrieval.py         # Hybrid search + RRF + MMR demo
+python cache.py             # Semantic cache + threshold sensitivity demo
+python generation.py        # Prompt structure + Lost-in-the-Middle demo
+python conversation.py      # Multi-turn history management demo
+python pipeline.py          # Full RAG pipeline (mock mode)
 ```
 
-### 3. 接入真实 LLM（可选）
+### 3. Connect a real LLM (optional)
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 export USE_REAL_LLM=1
 
-# 启动 API 服务
 OMP_NUM_THREADS=1 uvicorn server:app --port 8000
 ```
 
-访问 http://localhost:8000/docs 查看交互式 API 文档。
+Visit http://localhost:8000/docs for the interactive API docs.
 
-### 4. 调用示例
+### 4. API usage
 
 ```bash
-# 非流式问答
+# Non-streaming Q&A
 curl -X POST http://localhost:8000/ask \
   -H "Content-Type: application/json" \
-  -d '{"question": "年假需要提前几天申请？", "session_id": "user_001"}'
+  -d '{"question": "How many days of annual leave do I get?", "session_id": "user_001"}'
 
-# 上传新文档
+# Upload a new document
 curl -X POST http://localhost:8000/ingest \
   -F "file=@your_document.pdf"
 
-# 清空缓存
+# Clear the semantic cache
 curl -X DELETE http://localhost:8000/cache
 ```
 
-## 关键设计决策说明
+## Key design decisions
 
-### 为什么用 RRF 而不是加权融合
+### Why RRF instead of weighted score fusion
 
-向量分数（余弦，0.5~0.9）和 BM25 分数（无界，0~20）量纲不同，直接加权需要手动调参且不稳定。RRF 用排名代替分数，天然可比，k=60 是经验最优值。
+Vector scores (cosine, ~0.5–0.9) and BM25 scores (unbounded, 0–20+) live on completely different scales. Weighted fusion requires manual tuning and behaves inconsistently across queries. RRF uses rank positions instead of raw scores — naturally comparable, with k=60 empirically optimal across many datasets.
 
-### 为什么 RAPTOR 不从磁盘加载
+### Why RAPTOR is rebuilt in-process instead of loaded from disk
 
-Python pickle 绑定保存时的模块路径，跨入口加载会出现 `AttributeError`。Mock 摘要重建一次约 2s，成本可接受。生产环境若需持久化，改用 JSON 序列化树结构。
+Python pickle binds to the module path at save time. Loading from a different entry point causes `AttributeError: Can't get attribute 'RaptorTree' on <module '__main__'>`. The mock summarizer rebuilds the tree in ~2s, which is acceptable. For production persistence, serialize the tree to JSON instead.
 
-### Mac 上的 OMP_NUM_THREADS=1
+### OMP_NUM_THREADS=1 on macOS
 
-FAISS（用 OpenMP）和 PyTorch（也用 OpenMP）在 macOS 上有共享库冲突，会导致 Segfault。设置 `OMP_NUM_THREADS=1` 禁用 FAISS 的多线程即可解决。Linux 生产环境无此问题。
+FAISS (uses OpenMP) and PyTorch (also uses OpenMP) conflict on macOS, causing a segfault when both are loaded in the same process. Setting `OMP_NUM_THREADS=1` disables FAISS multithreading and resolves the crash. This is a macOS-only issue — Linux production environments are unaffected.
 
-### 语义缓存阈值
+### Semantic cache threshold calibration
 
-`bge-small-zh` 模型对语义相近问题的相似度上限约 0.88~0.92，需要在真实数据上标定。不同 embedding 模型的阈值不能直接复用。
+The `bge-small-zh` model produces cosine similarities of ~0.88–0.92 for semantically equivalent questions. Thresholds can't be transferred between embedding models — always calibrate on your own data by collecting historical query pairs, labeling which should match, and finding the F1-optimal threshold on a precision-recall curve.
 
-## 依赖说明
+## Tech stack
 
-| 库 | 用途 |
-|----|------|
-| `sentence-transformers` | 本地 Embedding 模型，免费，无需 API |
-| `faiss-cpu` | 向量索引（Meta 开源） |
-| `rank-bm25` | BM25 稀疏检索 |
-| `scikit-learn` | GMM 聚类（RAPTOR 使用） |
-| `anthropic` | LLM 生成（可替换为 OpenAI） |
-| `fastapi` + `uvicorn` | API 服务 |
-| `PyMuPDF` | PDF 解析 |
-| `tiktoken` | Token 计数 |
+| Library | Purpose |
+|---------|---------|
+| `sentence-transformers` | Local embedding model, free, no API required |
+| `faiss-cpu` | Vector indexing (Meta open source) |
+| `rank-bm25` | BM25 sparse retrieval |
+| `scikit-learn` | GMM clustering (used by RAPTOR) |
+| `anthropic` | LLM generation (swappable for OpenAI) |
+| `fastapi` + `uvicorn` | API server |
+| `PyMuPDF` | PDF parsing |
+| `tiktoken` | Token counting |
 
 ## License
 
